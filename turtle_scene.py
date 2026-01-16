@@ -22,6 +22,8 @@ def initialiser_fenetre():
     screen.title("Carrefour routier - Simulation")
     screen.setup(width=1.0, height=1.0)  # plein écran
     screen.bgcolor("white")
+    
+    screen.tracer(0)  # désactive l'animation pour un dessin plus rapide
 
     LARGEUR_ECRAN = screen.window_width()
     HAUTEUR_ECRAN = screen.window_height()
@@ -103,23 +105,30 @@ def dessiner_marquage_central():
     pen.penup()
 
     # Vertical bas
-    pen.goto(0, -ROND_POINT - MARGE + HAUTEUR_ECRAN /20)
+    pen.goto(0, -HAUTEUR_ECRAN / 2 - HAUTEUR_ECRAN / 20)
+    pen.setheading(90)
     pen.pendown()
-    pen.forward(HAUTEUR_ECRAN / 2 - ROND_POINT - MARGE - HAUTEUR_ECRAN /20)
+    pen.forward(HAUTEUR_ECRAN / 2 - HAUTEUR_ECRAN / 20)
     pen.penup()
-
-    # Horizontal gauche
-    pen.goto(-LARGEUR_ECRAN / 2, 0)
+    
+    # =========================
+    # HORIZONTALE GAUCHE (RÉFÉRENCE)
+    # =========================
+    pen.goto(-LARGEUR_ECRAN / 2 - LARGEUR_ECRAN / 30, 0)
     pen.setheading(0)
     pen.pendown()
-    pen.forward(LARGEUR_ECRAN / 2 - ROND_POINT - MARGE)
+    pen.forward(LARGEUR_ECRAN / 2 - LARGEUR_ECRAN / 30)
     pen.penup()
 
-    # Horizontal droite
-    pen.goto(ROND_POINT + MARGE, 0)
+    # =========================
+    # HORIZONTALE DROITE (MIROIR EXACT)
+    # =========================
+    pen.goto(LARGEUR_ECRAN / 2 + LARGEUR_ECRAN / 30, 0)
+    pen.setheading(180)
     pen.pendown()
-    pen.forward(LARGEUR_ECRAN / 2 - ROND_POINT - MARGE)
+    pen.forward(LARGEUR_ECRAN / 2 - LARGEUR_ECRAN / 30)
     pen.penup()
+
 
 
 # =======================
@@ -127,43 +136,70 @@ def dessiner_marquage_central():
 # =======================
 def dessiner_passages_pietons():
     pen.color("white")
-    pen.width(7)
+    pen.width(10)
 
     nb_bandes = 10
-    espacement = 10
-    longueur_bande = 20
+    espacement = 5
+    longueur_bande = 60   # longueur maximale des traits
 
     largeur_utile = LARGEUR_ROUTE - (nb_bandes - 1) * espacement
     largeur_bande = largeur_utile / nb_bandes
 
-    offset = ROND_POINT + MARGE + longueur_bande
+    distance_securite = ROND_POINT + MARGE
+    decalage_depart = 20 
+    # -----------------------------
+    # PASSAGES VERTICAUX
+    # -----------------------------
+    x_depart = -LARGEUR_ROUTE / 2 - largeur_bande / 2
 
-    # Routes verticales
-    x_depart = -LARGEUR_ROUTE / 2 - longueur_bande / 2
-    for y in [offset, -offset]:
-        x = x_depart
-        for _ in range(nb_bandes):
-            pen.goto(x, y)
-            pen.setheading(270)
-            pen.pendown()
-            pen.forward(longueur_bande)
-            pen.penup()
-            x += largeur_bande + espacement
+    # Vertical HAUT
+    x = x_depart
+    for _ in range(nb_bandes):
+        pen.goto(x, distance_securite + decalage_depart)  # juste au-dessus du rond-point
+        pen.setheading(90)  # monter
+        pen.pendown()
+        pen.forward(longueur_bande)  # ne va pas jusqu'au bord de l'écran
+        pen.penup()
+        x += largeur_bande + espacement
 
-    # Routes horizontales
-    y_depart = -LARGEUR_ROUTE / 2 - longueur_bande
-    for x in [offset, -offset]:
-        y = y_depart
-        for _ in range(nb_bandes):
-            pen.goto(x, y)
-            pen.setheading(0)
-            pen.pendown()
-            pen.forward(longueur_bande)
-            pen.penup()
-            y += largeur_bande + espacement
+    # Vertical BAS
+    x = x_depart
+    for _ in range(nb_bandes):
+        pen.goto(x, -distance_securite - decalage_depart)  # juste en dessous du rond-point
+        pen.setheading(270)  # descendre
+        pen.pendown()
+        pen.forward(longueur_bande)
+        pen.penup()
+        x += largeur_bande + espacement
+
+    # -----------------------------
+    # PASSAGES HORIZONTAUX
+    # -----------------------------
+    y_depart = -LARGEUR_ROUTE / 2 - largeur_bande / 2
+
+    # Horizontal DROITE
+    x = distance_securite + decalage_depart
+    y = y_depart
+    for _ in range(nb_bandes):
+        pen.goto(x, y)
+        pen.setheading(0)  # vers la droite
+        pen.pendown()
+        pen.forward(longueur_bande)  # longueur fixe
+        pen.penup()
+        y += largeur_bande + espacement
+
+    # Horizontal GAUCHE
+    x = -distance_securite - decalage_depart
+    y = y_depart
+    for _ in range(nb_bandes):
+        pen.goto(x, y)
+        pen.setheading(180)  # vers la gauche
+        pen.pendown()
+        pen.forward(longueur_bande)
+        pen.penup()
+        y += largeur_bande + espacement
 
 
-# =======================
 # CARREFOUR COMPLET
 # =======================
 def dessiner_carrefour():
@@ -172,10 +208,3 @@ def dessiner_carrefour():
     dessiner_marquage_central()
     dessiner_passages_pietons()
 
-
-# =======================
-# PROGRAMME PRINCIPAL
-# =======================
-screen = initialiser_fenetre()
-dessiner_carrefour()
-screen.mainloop()
